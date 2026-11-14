@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ULA: uma unidade lógica e aritmética que você pode redesenhar</title>
+  <meta name="description" content="Uma ULA de 8 bits feita de portas lógicas, ao vivo no navegador. Mude a largura, o somador e as operações e veja o número de portas, a planta do chip e o caminho crítico mudarem.">
+  <meta name="color-scheme" content="light dark">
+  <meta property="og:title" content="ULA: uma unidade lógica e aritmética que você pode redesenhar">
+  <meta property="og:description" content="ULA em nível de portas no navegador: propagação do carry, arquiteturas de somador, planta e atraso de 4 a 64 bits.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='3' fill='%23121519'/%3E%3Cpath d='M6 8h8l4 8-4 8H6l4-8z' fill='none' stroke='%23ffb21f' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M18 16h8' stroke='%2333c3dc' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="alternate" hreflang="en" href="https://castlelli.github.io/electronics/alu/">
+  <link rel="alternate" hreflang="pt-BR" href="https://castlelli.github.io/electronics/alu/pt/">
+  <link rel="preload" href="../fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../style.css?v=1">
+  <script>
+    // Aplica o tema salvo antes da primeira pintura.
+    try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch (error) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#live">Ir para a ULA ao vivo</a>
+
+  <header class="nav">
+    <a class="back" href="../../" aria-label="Voltar aos projetos de eletrônica"><span aria-hidden="true">←</span><span>Eletrônica</span></a>
+    <a class="brand" href="#top">ULA</a>
+    <nav aria-label="Seções">
+      <a href="#live">Ao vivo</a>
+      <a href="#carry">Carry</a>
+      <a href="#design">Projeto</a>
+      <a href="#scaling">Escala</a>
+      <a href="#prefix">Prefixo</a>
+      <a href="#verified">Verificação</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="button ghost" href="../" hreflang="en" lang="en" aria-label="English">EN</a>
+      <button class="button ghost" type="button" data-theme-toggle aria-label="Alternar entre tema claro e escuro">Tema</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div>
+        <p class="eyebrow">Hardware digital · Verilog · nível de portas</p>
+        <h1>Uma ULA que você pode <em>redesenhar</em></h1>
+        <p class="lede">Uma unidade lógica e aritmética feita só de portas lógicas, rodando aqui porta por porta. Peça mais bits, um somador mais rápido ou operações extras e veja quanto isso custa em silício: mais portas, uma planta maior, um caminho crítico mais longo ou mais curto.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#design">Projete a sua</a>
+          <a class="button" href="https://github.com/castlelli/electronics/tree/main/alu">Código Verilog</a>
+        </div>
+      </div>
+      <aside class="sheet titleblock" aria-label="Resumo do projeto atual">
+        <div class="tb-head"><span class="tb-part" id="tb-part">ALU-8</span><span class="tb-rev" id="tb-adder">ripple carry</span></div>
+        <dl>
+          <div><dt>Portas</dt><dd id="tb-gates">–</dd></div>
+          <div><dt>Transistores</dt><dd id="tb-trans">–</dd></div>
+          <div><dt>Caminho crítico</dt><dd id="tb-delay">–</dd></div>
+          <div><dt>Operações</dt><dd id="tb-ops">–</dd></div>
+        </dl>
+        <div class="tb-foot">Este bloco acompanha o projeto da seção 3.</div>
+      </aside>
+    </section>
+
+    <section class="section" id="live">
+      <div class="section-head">
+        <div class="section-num">01 · Ao vivo</div>
+        <div>
+          <h2>A ULA original de 8 bits</h2>
+          <p>Duas entradas de 8 bits, quatro operações, um resultado com carry e overflow, seis flags de comparação e paridade. Clique nos bits ou digite um número: cada saída abaixo vem da avaliação das 192 portas do circuito, não de aritmética em JavaScript.</p>
+        </div>
+      </div>
+      <div class="sheet live">
+        <div class="live-controls">
+          <div class="word" data-word="A"></div>
+          <div class="word" data-word="B"></div>
+          <div>
+            <span class="label">Operação</span>
+            <div class="segmented" id="live-op" role="group" aria-label="Operação"></div>
+          </div>
+          <p class="note">As comparações olham os módulos: |A| contra |B|, como no projeto original. A seção 3 pode mudar isso.</p>
+        </div>
+        <div class="live-figure">
+          <div class="scroll-x"><svg class="schematic" id="schematic" viewBox="0 0 900 400" role="img" aria-label="Diagrama de blocos da ULA com o caminho ativo destacado"></svg></div>
+          <div class="readout" id="live-readout"></div>
+          <div class="leds" id="live-leds" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="carry">
+      <div class="section-head">
+        <div class="section-num">02 · Tempo</div>
+        <div>
+          <h2>Veja o carry se propagar</h2>
+          <p>Portas não são instantâneas. Cada uma acrescenta um pequeno atraso, então depois que as entradas mudam a soma passa por valores errados até o carry caminhar do bit 0 ao bit 7. Esta é uma simulação por eventos de cada porta; arraste sobre a forma de onda para percorrer o tempo.</p>
+        </div>
+      </div>
+      <div class="sheet carry-grid">
+        <div class="carry-bar">
+          <div class="group">
+            <span class="label">Mudança nas entradas</span>
+            <div class="segmented" id="carry-preset" role="group" aria-label="Mudança nas entradas"></div>
+          </div>
+          <div class="group">
+            <span class="label">Somador</span>
+            <div class="segmented" id="carry-adder" role="group" aria-label="Somador"></div>
+          </div>
+          <button class="button primary" type="button" id="carry-play">Rodar</button>
+        </div>
+        <div class="scroll-x"><svg class="carry-chain" id="carry-chain" viewBox="0 0 900 150" role="img" aria-label="Oito fatias de bit do somador, com os carries acendendo quando chegam"></svg></div>
+        <div class="wave-wrap"><canvas class="wave" id="wave" height="300" aria-label="Forma de onda dos sinais do somador, como num analisador lógico"></canvas></div>
+        <div class="time-row">
+          <span class="label" style="margin:0">Tempo</span>
+          <input type="range" id="carry-time" min="0" max="100" step="0.5" value="100" aria-label="Tempo de simulação">
+          <output id="carry-time-out">0 τ</output>
+        </div>
+        <div class="carry-stats" id="carry-stats"></div>
+      </div>
+    </section>
+
+    <section class="section" id="design">
+      <div class="section-head">
+        <div class="section-num">03 · Projeto</div>
+        <div>
+          <h2>Peça mais, pague em silício</h2>
+          <p>Escolha o que a ULA precisa fazer. O circuito é reconstruído com portas a cada mudança e desenhado como um chip: uma coluna por bit, uma linha por unidade, cada porta um bloco do tamanho dos seus transistores. A linha vermelha é o caminho crítico, a cadeia de portas mais lenta de uma entrada até uma saída, que define o clock.</p>
+        </div>
+      </div>
+      <div class="sheet designer">
+        <div class="designer-controls">
+          <div>
+            <div class="width-row"><span class="label">Largura</span><output id="d-width-out">8 bits</output></div>
+            <input type="range" id="d-width" min="4" max="64" step="1" value="8" aria-label="Largura em bits">
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="button" type="button" id="d-grow">Crescer 4 → 64</button>
+            </div>
+          </div>
+          <div>
+            <span class="label">Somador</span>
+            <div class="adder-list" id="d-adder"></div>
+          </div>
+          <div>
+            <span class="label">Operações</span>
+            <label class="check"><input type="checkbox" checked disabled> Soma, subtração <small>base</small></label>
+            <label class="check"><input type="checkbox" id="d-shift" checked> Shift ×2, ÷2 <small>fios + mux</small></label>
+            <label class="check"><input type="checkbox" id="d-logic"> AND, OR, XOR <small>3 portas/bit</small></label>
+            <label class="check"><input type="checkbox" id="d-cmp" checked> Flags de comparação</label>
+            <label class="check"><input type="checkbox" id="d-parity" checked> Paridade</label>
+          </div>
+          <div id="d-cmp-group">
+            <span class="label">Comparação</span>
+            <div class="segmented" id="d-cmp-mode" role="group" aria-label="Modo de comparação"></div>
+            <div class="segmented" id="d-cmp-arch" role="group" aria-label="Estrutura do comparador" style="margin-top:6px"></div>
+          </div>
+          <div>
+            <span class="label">Exemplos</span>
+            <div class="presets" id="d-presets"></div>
+          </div>
+        </div>
+        <div class="designer-out">
+          <div class="specs" id="d-specs"></div>
+          <div class="path-line" id="d-path"></div>
+          <div class="floor-wrap">
+            <canvas class="floor" id="floor" aria-label="Planta da ULA: colunas são bits, linhas são unidades, a linha vermelha é o caminho crítico"></canvas>
+            <div class="floor-tip" id="floor-tip" hidden></div>
+          </div>
+          <div class="floor-legend" id="floor-legend"></div>
+          <div class="breakdown">
+            <span class="label">Transistores por unidade</span>
+            <div class="bar" id="d-bar"></div>
+            <div class="bar-keys" id="d-bar-keys"></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Atrasos em τ, cerca de um atraso de inversor; f<sub>máx</sub> supõe τ = 15 ps. As contagens de transistores são estimativas de CMOS estático (inversor 2, NAND 4, AND 6, XOR 12, mux 12). O contorno tracejado na planta é o projeto original de 8 bits na mesma escala.</p>
+    </section>
+
+    <section class="section" id="scaling">
+      <div class="section-head">
+        <div class="section-num">04 · Escala</div>
+        <div>
+          <h2>A complexidade cresce, de um jeito diferente para cada somador</h2>
+          <p>As mesmas escolhas, de 4 a 64 bits. O ripple carry continua pequeno, mas seu atraso cresce em linha reta. O carry select cresce como √n, os blocos de lookahead reduzem a inclinação e os somadores de prefixo chegam a atraso log n gastando portas e fios. O ponto é o seu projeto.</p>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="charts-bar">
+          <span class="label" style="margin:0">Medir</span>
+          <div class="segmented" id="c-scope" role="group" aria-label="O que medir"></div>
+          <button class="button" type="button" id="c-grow">Crescer 4 → 64</button>
+        </div>
+        <div class="charts">
+          <figure><svg class="chart" id="chart-delay" viewBox="0 0 520 330" role="img" aria-label="Atraso do caminho crítico em função da largura"></svg></figure>
+          <figure><svg class="chart" id="chart-area" viewBox="0 0 520 330" role="img" aria-label="Número de transistores em função da largura"></svg></figure>
+        </div>
+        <div class="chart-keys" id="chart-keys"></div>
+      </div>
+      <p class="note" id="c-note"></p>
+    </section>
+
+    <section class="section" id="prefix">
+      <div class="section-head">
+        <div class="section-num">05 · Por dentro</div>
+        <div>
+          <h2>Como os somadores rápidos driblam o carry</h2>
+          <p>O carry que entra no bit i depende de todos os bits abaixo dele. O ripple carry junta essa informação um bit de cada vez. Os somadores de prefixo a combinam em árvore: cada ponto funde o resumo generate/propagate de dois trechos de bits. As linhas são níveis de portas, então a altura do desenho é o atraso. Passe o mouse sobre uma coluna para ver o cone de entradas do seu carry.</p>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="net-bar">
+          <div class="group">
+            <span class="label">Rede</span>
+            <div class="segmented" id="n-kind" role="group" aria-label="Rede"></div>
+          </div>
+          <div class="group">
+            <div class="width-row"><span class="label">Largura</span><output id="n-width-out" style="font-size:18px">16 bits</output></div>
+            <input type="range" id="n-width" min="4" max="64" step="1" value="16" aria-label="Largura da rede">
+          </div>
+        </div>
+        <div class="scroll-x"><svg class="net-svg" id="net" viewBox="0 0 900 360" role="img" aria-label="Diagrama da rede de prefixo"></svg></div>
+        <div class="net-stats" id="net-stats"></div>
+      </div>
+    </section>
+
+    <section class="section" id="verified">
+      <div class="section-head">
+        <div class="section-num">06 · Verificação</div>
+        <div>
+          <h2>O mesmo circuito em Verilog e no navegador</h2>
+          <p>A ULA foi escrita primeiro em Verilog como um projeto fixo de 8 bits. Aqui ela foi reescrita com parâmetros e blocos generate, e o modelo de portas da página espelha essa estrutura. Os dois são testados um contra o outro e contra uma referência aritmética simples.</p>
+        </div>
+      </div>
+      <div class="sheet checks">
+        <div><span class="ok">PASSOU</span><div class="num">262.170</div><p>vetores do testbench original de 8 bits, sem alterações, rodados na versão parametrizada.</p></div>
+        <div><span class="ok">PASSOU</span><div class="num">458.752</div><p>verificações exaustivas em 8 bits (todo A, B e opcode) para cada um dos cinco somadores no iverilog.</p></div>
+        <div><span class="ok">PASSOU</span><div class="num">86 configs</div><p>larguras de 4 a 64, todos os somadores, modos de comparação e todas as combinações das unidades opcionais.</p></div>
+        <div><span class="ok">PASSOU</span><div class="num">347.639</div><p>verificações do modelo de portas desta página: cada largura de 2 a 64 contra a referência, e 2.000 vetores contra o iverilog.</p></div>
+      </div>
+      <div class="prose" style="margin-top:22px">
+        <p>Rode você mesmo: <code>python alu/scripts/verify.py</code> para o Verilog, <code>node alu/tests/parity.mjs</code> para o modelo do navegador. O modelo de portas também propaga constantes e remove portas sem uso, como a síntese faria, então as contagens acima são do circuito que realmente sobra.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Vinicius Castelli · HTML, CSS e JavaScript puros, sem rastreamento</span>
+    <span><a href="https://github.com/castlelli/electronics">github.com/castlelli/electronics</a></span>
+  </footer>
+
+  <script type="module" src="../js/main.js?v=1"></script>
+</body>
+</html>

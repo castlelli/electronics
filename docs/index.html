@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Electronics | Vinicius Castelli</title>
+  <meta name="description" content="Digital hardware projects built from logic gates, each with a live version in the browser.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="alu/style.css?v=1">
+  <style>
+    main { padding: clamp(40px, 8vw, 96px) 0; max-width: 860px; }
+    .cards { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 12px; }
+    .cards a { display: block; padding: 18px 20px; text-decoration: none; }
+    .cards a:hover { border-color: var(--ink-3); }
+    .cards h2 { font-size: 22px; margin: 0 0 6px; }
+    .cards p { margin: 0; color: var(--ink-2); }
+    .tag { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3) !important; margin-top: 10px !important; }
+    .back { font-family: var(--font-mono); font-size: 13px; color: var(--ink-3); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="back" href="https://castlelli.github.io/">← Portfolio</a>
+    <p class="eyebrow" style="margin-top:28px">Digital hardware · Verilog</p>
+    <h1>Electronics</h1>
+    <p class="lede">Hardware built from logic gates, each project with a version you can open and play with in the browser.</p>
+    <ul class="cards">
+      <li><a class="sheet" href="alu/">
+        <h2>ALU</h2>
+        <p>An arithmetic logic unit built from gates: watch the carry ripple, then redesign it from 4 to 64 bits with five adder architectures and see the floorplan and critical path change.</p>
+        <p class="tag">electronics/alu</p>
+      </a></li>
+      <li class="note" lang="pt-BR" style="padding-left:2px"><a href="alu/pt/">Versão em português</a></li>
+    </ul>
+  </main>
+</body>
+</html>

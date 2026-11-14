@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ALU: an arithmetic logic unit you can redesign</title>
+  <meta name="description" content="An 8-bit ALU built from logic gates, live in the browser. Change the width, the adder and the operations and watch the gate count, the floorplan and the critical path change.">
+  <meta name="color-scheme" content="light dark">
+  <meta property="og:title" content="ALU: an arithmetic logic unit you can redesign">
+  <meta property="og:description" content="Gate-level ALU in the browser: carry ripple, adder architectures, floorplan and timing from 4 to 64 bits.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='3' fill='%23121519'/%3E%3Cpath d='M6 8h8l4 8-4 8H6l4-8z' fill='none' stroke='%23ffb21f' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M18 16h8' stroke='%2333c3dc' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="alternate" hreflang="en" href="https://castlelli.github.io/electronics/alu/">
+  <link rel="alternate" hreflang="pt-BR" href="https://castlelli.github.io/electronics/alu/pt/">
+  <link rel="preload" href="fonts/geist.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/geist-mono.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css?v=1">
+  <script>
+    // Applies a saved theme before first paint.
+    try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch (error) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#live">Skip to the live ALU</a>
+
+  <header class="nav">
+    <a class="back" href="../" aria-label="Back to the electronics projects"><span aria-hidden="true">←</span><span>Electronics</span></a>
+    <a class="brand" href="#top">ALU</a>
+    <nav aria-label="Sections">
+      <a href="#live">Live</a>
+      <a href="#carry">Carry</a>
+      <a href="#design">Design</a>
+      <a href="#scaling">Scaling</a>
+      <a href="#prefix">Prefix</a>
+      <a href="#verified">Verified</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="button ghost" href="pt/" hreflang="pt-BR" lang="pt-BR" aria-label="Português">PT</a>
+      <button class="button ghost" type="button" data-theme-toggle aria-label="Switch between light and dark theme">Theme</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div>
+        <p class="eyebrow">Digital hardware · Verilog · gate level</p>
+        <h1>An ALU you can <em>redesign</em></h1>
+        <p class="lede">An arithmetic logic unit built only from logic gates, running here gate by gate. Ask it for more bits, a faster adder or extra operations and watch what that costs in silicon: more gates, a bigger floorplan, a longer or shorter critical path.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#design">Design your own</a>
+          <a class="button" href="https://github.com/castlelli/electronics/tree/main/alu">Verilog source</a>
+        </div>
+      </div>
+      <aside class="sheet titleblock" aria-label="Current design summary">
+        <div class="tb-head"><span class="tb-part" id="tb-part">ALU-8</span><span class="tb-rev" id="tb-adder">ripple carry</span></div>
+        <dl>
+          <div><dt>Gates</dt><dd id="tb-gates">–</dd></div>
+          <div><dt>Transistors</dt><dd id="tb-trans">–</dd></div>
+          <div><dt>Critical path</dt><dd id="tb-delay">–</dd></div>
+          <div><dt>Operations</dt><dd id="tb-ops">–</dd></div>
+        </dl>
+        <div class="tb-foot">This block follows the design in section 3.</div>
+      </aside>
+    </section>
+
+    <section class="section" id="live">
+      <div class="section-head">
+        <div class="section-num">01 · Live</div>
+        <div>
+          <h2>The original 8-bit ALU</h2>
+          <p>Two 8-bit inputs, four operations, a result with carry and overflow, six comparison flags and parity. Click the bits or type a number: every output below comes from evaluating the circuit's 192 gates, not from JavaScript arithmetic.</p>
+        </div>
+      </div>
+      <div class="sheet live">
+        <div class="live-controls">
+          <div class="word" data-word="A"></div>
+          <div class="word" data-word="B"></div>
+          <div>
+            <span class="label">Operation</span>
+            <div class="segmented" id="live-op" role="group" aria-label="Operation"></div>
+          </div>
+          <p class="note">Comparisons look at magnitudes: |A| against |B|, as in the original design. Section 3 can change that.</p>
+        </div>
+        <div class="live-figure">
+          <div class="scroll-x"><svg class="schematic" id="schematic" viewBox="0 0 900 400" role="img" aria-label="Block diagram of the ALU with the active path highlighted"></svg></div>
+          <div class="readout" id="live-readout"></div>
+          <div class="leds" id="live-leds" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="carry">
+      <div class="section-head">
+        <div class="section-num">02 · Timing</div>
+        <div>
+          <h2>Watch the carry ripple</h2>
+          <p>Gates are not instant. Each one adds a small delay, so after the inputs change the sum flickers through wrong values until the carry has walked from bit 0 to bit 7. This is an event-driven simulation of every gate; drag across the waveform to scrub time.</p>
+        </div>
+      </div>
+      <div class="sheet carry-grid">
+        <div class="carry-bar">
+          <div class="group">
+            <span class="label">Input change</span>
+            <div class="segmented" id="carry-preset" role="group" aria-label="Input change"></div>
+          </div>
+          <div class="group">
+            <span class="label">Adder</span>
+            <div class="segmented" id="carry-adder" role="group" aria-label="Adder"></div>
+          </div>
+          <button class="button primary" type="button" id="carry-play">Play</button>
+        </div>
+        <div class="scroll-x"><svg class="carry-chain" id="carry-chain" viewBox="0 0 900 150" role="img" aria-label="Eight bit slices of the adder, with carries lighting up as they arrive"></svg></div>
+        <div class="wave-wrap"><canvas class="wave" id="wave" height="300" aria-label="Logic analyzer waveform of the adder signals"></canvas></div>
+        <div class="time-row">
+          <span class="label" style="margin:0">Time</span>
+          <input type="range" id="carry-time" min="0" max="100" step="0.5" value="100" aria-label="Simulation time">
+          <output id="carry-time-out">0 τ</output>
+        </div>
+        <div class="carry-stats" id="carry-stats"></div>
+      </div>
+    </section>
+
+    <section class="section" id="design">
+      <div class="section-head">
+        <div class="section-num">03 · Design</div>
+        <div>
+          <h2>Ask for more, pay in silicon</h2>
+          <p>Choose what the ALU must do. The circuit is rebuilt from gates on every change and laid out like a die: one column per bit, one row per unit, each gate a tile sized by its transistors. The red line is the critical path, the slowest chain of gates from an input to an output, which sets the clock.</p>
+        </div>
+      </div>
+      <div class="sheet designer">
+        <div class="designer-controls">
+          <div>
+            <div class="width-row"><span class="label">Width</span><output id="d-width-out">8 bits</output></div>
+            <input type="range" id="d-width" min="4" max="64" step="1" value="8" aria-label="Width in bits">
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <button class="button" type="button" id="d-grow">Grow 4 → 64</button>
+            </div>
+          </div>
+          <div>
+            <span class="label">Adder</span>
+            <div class="adder-list" id="d-adder"></div>
+          </div>
+          <div>
+            <span class="label">Operations</span>
+            <label class="check"><input type="checkbox" checked disabled> Add, subtract <small>core</small></label>
+            <label class="check"><input type="checkbox" id="d-shift" checked> Shift ×2, ÷2 <small>wires + mux</small></label>
+            <label class="check"><input type="checkbox" id="d-logic"> AND, OR, XOR <small>3 gates/bit</small></label>
+            <label class="check"><input type="checkbox" id="d-cmp" checked> Comparison flags</label>
+            <label class="check"><input type="checkbox" id="d-parity" checked> Parity</label>
+          </div>
+          <div id="d-cmp-group">
+            <span class="label">Compare</span>
+            <div class="segmented" id="d-cmp-mode" role="group" aria-label="Comparison mode"></div>
+            <div class="segmented" id="d-cmp-arch" role="group" aria-label="Comparator structure" style="margin-top:6px"></div>
+          </div>
+          <div>
+            <span class="label">Presets</span>
+            <div class="presets" id="d-presets"></div>
+          </div>
+        </div>
+        <div class="designer-out">
+          <div class="specs" id="d-specs"></div>
+          <div class="path-line" id="d-path"></div>
+          <div class="floor-wrap">
+            <canvas class="floor" id="floor" aria-label="Floorplan of the ALU: columns are bits, rows are units, the red line is the critical path"></canvas>
+            <div class="floor-tip" id="floor-tip" hidden></div>
+          </div>
+          <div class="floor-legend" id="floor-legend"></div>
+          <div class="breakdown">
+            <span class="label">Transistors by unit</span>
+            <div class="bar" id="d-bar"></div>
+            <div class="bar-keys" id="d-bar-keys"></div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Delays are in τ, about one inverter delay; f<sub>max</sub> assumes τ = 15 ps. Transistor counts are static CMOS estimates (inverter 2, NAND 4, AND 6, XOR 12, mux 12). The dashed outline in the floorplan is the original 8-bit design at the same scale.</p>
+    </section>
+
+    <section class="section" id="scaling">
+      <div class="section-head">
+        <div class="section-num">04 · Scaling</div>
+        <div>
+          <h2>Complexity grows, differently for each adder</h2>
+          <p>The same choices swept from 4 to 64 bits. Ripple carry stays small but its delay grows in a straight line. Carry select grows like √n, lookahead blocks cut the slope, and the prefix adders reach log n delay by spending gates and wires. The dot is your design.</p>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="charts-bar">
+          <span class="label" style="margin:0">Measure</span>
+          <div class="segmented" id="c-scope" role="group" aria-label="What to measure"></div>
+          <button class="button" type="button" id="c-grow">Grow 4 → 64</button>
+        </div>
+        <div class="charts">
+          <figure><svg class="chart" id="chart-delay" viewBox="0 0 520 330" role="img" aria-label="Critical path delay against width"></svg></figure>
+          <figure><svg class="chart" id="chart-area" viewBox="0 0 520 330" role="img" aria-label="Transistor count against width"></svg></figure>
+        </div>
+        <div class="chart-keys" id="chart-keys"></div>
+      </div>
+      <p class="note" id="c-note"></p>
+    </section>
+
+    <section class="section" id="prefix">
+      <div class="section-head">
+        <div class="section-num">05 · Inside</div>
+        <div>
+          <h2>How the fast adders cheat the carry</h2>
+          <p>A carry into bit i depends on every bit below it. Ripple carry collects that information one bit at a time. Prefix adders combine it in a tree: each dot merges the generate/propagate summary of two spans of bits. Rows are gate levels, so the height of the drawing is the delay. Hover a column to see its carry's cone of inputs.</p>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="net-bar">
+          <div class="group">
+            <span class="label">Network</span>
+            <div class="segmented" id="n-kind" role="group" aria-label="Network"></div>
+          </div>
+          <div class="group">
+            <div class="width-row"><span class="label">Width</span><output id="n-width-out" style="font-size:18px">16 bits</output></div>
+            <input type="range" id="n-width" min="4" max="64" step="1" value="16" aria-label="Network width">
+          </div>
+        </div>
+        <div class="scroll-x"><svg class="net-svg" id="net" viewBox="0 0 900 360" role="img" aria-label="Prefix network diagram"></svg></div>
+        <div class="net-stats" id="net-stats"></div>
+      </div>
+    </section>
+
+    <section class="section" id="verified">
+      <div class="section-head">
+        <div class="section-num">06 · Verified</div>
+        <div>
+          <h2>Same circuit in Verilog and in the browser</h2>
+          <p>The ALU was first written in Verilog as a fixed 8-bit design. Here it is rewritten with parameters and generate blocks, and the page's gate model mirrors that structure. Both are tested against each other and against a plain arithmetic reference.</p>
+        </div>
+      </div>
+      <div class="sheet checks">
+        <div><span class="ok">PASS</span><div class="num">262,170</div><p>vectors of the original 8-bit testbench, unchanged, run on the parameterized rewrite.</p></div>
+        <div><span class="ok">PASS</span><div class="num">458,752</div><p>exhaustive checks at 8 bits (every A, B and opcode) for each of the five adders in iverilog.</p></div>
+        <div><span class="ok">PASS</span><div class="num">86 configs</div><p>widths from 4 to 64, all adders, comparison modes and every on/off mix of the optional units.</p></div>
+        <div><span class="ok">PASS</span><div class="num">347,639</div><p>checks of this page's gate model: every width from 2 to 64 against the reference, and 2,000 vectors against iverilog.</p></div>
+      </div>
+      <div class="prose" style="margin-top:22px">
+        <p>Run them yourself: <code>python alu/scripts/verify.py</code> for the Verilog, <code>node alu/tests/parity.mjs</code> for the browser model. The gate model also folds constants and removes unused gates, the way synthesis would, so the counts above are for the circuit that actually remains.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Vinicius Castelli · plain HTML, CSS and JavaScript, no tracking</span>
+    <span><a href="https://github.com/castlelli/electronics">github.com/castlelli/electronics</a></span>
+  </footer>
+
+  <script type="module" src="js/main.js?v=1"></script>
+</body>
+</html>
